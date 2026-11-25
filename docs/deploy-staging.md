@@ -1,6 +1,6 @@
 # Staging (client test environment) on the VPS
 
-Runs on the Hetzner VPS behind the existing Traefik, using the existing Postgres container.
+Runs on the Hetzner VPS behind the existing Traefik. The stack includes its own Postgres 16.
 
 | URL                                   | What                                          |
 | ------------------------------------- | --------------------------------------------- |
@@ -12,7 +12,8 @@ Runs on the Hetzner VPS behind the existing Traefik, using the existing Postgres
 still get Let's Encrypt certificates. For a real domain later, point A records at the VPS and
 change `APP_HOST` / `S3_HOST` / `MAIL_HOST` in `.env.staging`.
 
-Stack (`docker-compose.staging.yml`): `migrate` (one-shot) → `web` + `worker`, `rustfs` + `s3-init`
+Stack (`docker-compose.staging.yml`): `postgres` (data in volume `postgres-data`, not exposed to
+the internet), `migrate` (one-shot) → `web` + `worker`, `rustfs` + `s3-init`
 (S3), `mailpit` (catches all mail; nothing is sent to real addresses), optional `dss`.
 
 Images are built by GitHub Actions (`.github/workflows/docker.yml`) on every push to `main` and
@@ -36,24 +37,17 @@ cp .env.staging.example .env.staging
 Look up the values for `.env.staging`:
 
 ```sh
-docker network ls                                     # TRAEFIK_NETWORK, POSTGRES_NETWORK
-docker ps --format '{{.Names}}\t{{.Networks}}'        # Postgres container name = DB host
+docker network ls                                     # TRAEFIK_NETWORK
 docker inspect <traefik-container> | grep -iE 'entrypoints|certresolver|certificatesresolvers'
 #   -> TRAEFIK_ENTRYPOINT (often websecure / https), TRAEFIK_CERTRESOLVER (often letsencrypt / le)
 ```
 
-Create the database and user in the existing Postgres (password: `openssl rand -hex 24`):
+Fill in the secrets: `POSTGRES_PASSWORD` (`openssl rand -hex 24`, hex only), `BETTER_AUTH_SECRET`
+(`openssl rand -base64 32`), the S3 keys (`openssl rand -hex 16` / `-hex 32`),
+`MAILPIT_UI_AUTH=user:password` and `SEED_PASSWORD`.
 
-```sh
-docker exec -it <postgres-container> psql -U postgres -c "CREATE ROLE domik_staging LOGIN PASSWORD '<pw>';" \
-  -c "CREATE DATABASE domik_staging OWNER domik_staging;"
-```
-
-Fill in the remaining secrets (`openssl rand -base64 32` for `BETTER_AUTH_SECRET`,
-`openssl rand -hex 16/32` for the S3 keys), `MAILPIT_UI_AUTH=user:password` and `SEED_PASSWORD`.
-
-Postgres must use UTC; the app always writes `timestamptz`, so the server setting only affects
-`psql` output.
+The database is created on the first `up`. Its password is fixed at that moment: changing
+`POSTGRES_PASSWORD` later does not change it (reset the DB, see below, or `ALTER ROLE`).
 
 ## 2. Deploy / update
 
@@ -107,10 +101,15 @@ Open it in two browsers (bidder 1 and bidder 2) to see live bidding.
 ## 4. Reset / other
 
 ```sh
-# Wipe all staging data and start over (drops the DB schema, then deploy + seed again)
-docker exec -it <postgres-container> psql -U postgres -c "DROP DATABASE domik_staging WITH (FORCE);" \
-  -c "CREATE DATABASE domik_staging OWNER domik_staging;"
-dstg up -d --force-recreate migrate web worker && dstg run --rm migrate node dist/cli/seed.js
+# Wipe ALL staging data (DB, files, mails) and start over
+dstg down -v && dstg up -d && dstg run --rm migrate node dist/cli/seed.js
+
+# Backup / restore the database
+dstg exec -T postgres pg_dump -U domik -Fc domik > domik-$(date +%F).dump
+dstg exec -T postgres pg_restore -U domik -d domik --clean < domik-2026-11-25.dump
+
+# psql shell
+dstg exec postgres psql -U domik
 
 # Verify an auction's bid hash chain
 dstg exec worker node dist/cli/verify-auction.js <auctionId>

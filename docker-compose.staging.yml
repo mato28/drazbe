@@ -5,15 +5,14 @@
 #   docker compose --env-file .env.staging -f docker-compose.staging.yml pull
 #   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
 #
-# Postgres is NOT part of this stack: it runs in its own container on the VPS; we join its
-# Docker network. See docs/deploy-staging.md.
+# Includes its own Postgres 16 (not exposed to the internet). See docs/deploy-staging.md.
 name: domik-staging
 
 x-app-env: &app-env
   NODE_ENV: production
   LOG_LEVEL: ${LOG_LEVEL:-info}
   APP_URL: https://${APP_HOST}
-  DATABASE_URL: ${DATABASE_URL}
+  DATABASE_URL: postgres://domik:${POSTGRES_PASSWORD}@postgres:5432/domik
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
   # Public URL: pre-signed download links are opened by the browser.
   S3_ENDPOINT: https://${S3_HOST}
@@ -33,12 +32,32 @@ x-app-env: &app-env
   SEED_PASSWORD: ${SEED_PASSWORD}
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: domik
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: domik
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [default]
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U domik -d domik']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   # One-shot: applies DB migrations; web and worker wait for it.
   migrate:
     image: ghcr.io/mato28/drazbe-worker:${IMAGE_TAG:-main}
     command: ['node', 'dist/cli/migrate.js']
     environment: *app-env
-    networks: [postgres]
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [default]
     restart: 'no'
 
   web:
@@ -46,7 +65,7 @@ services:
     environment: *app-env
     depends_on:
       migrate: { condition: service_completed_successfully }
-    networks: [default, postgres, traefik]
+    networks: [default, traefik]
     restart: unless-stopped
     labels:
       - traefik.enable=true
@@ -63,7 +82,7 @@ services:
     environment: *app-env
     depends_on:
       migrate: { condition: service_completed_successfully }
-    networks: [default, postgres]
+    networks: [default]
     restart: unless-stopped
 
   rustfs:
@@ -146,13 +165,11 @@ services:
 
 networks:
   default: {}
-  postgres:
-    external: true
-    name: ${POSTGRES_NETWORK}
   traefik:
     external: true
     name: ${TRAEFIK_NETWORK}
 
 volumes:
+  postgres-data:
   rustfs-data:
   mailpit-data:
