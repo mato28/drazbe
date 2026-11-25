@@ -1,0 +1,29 @@
+{
+  "name": "@domik/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env --clear-screen=false src/index.ts",
+    "build": "tsup",
+    "start": "node dist/index.js",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "verify-auction": "tsx --env-file-if-exists=../../.env src/cli/verify-auction.ts",
+    "demo-auction": "tsx --env-file-if-exists=../../.env src/cli/demo-auction.ts"
+  },
+  "dependencies": {
+    "@domik/core": "workspace:*",
+    "@domik/db": "workspace:*",
+    "@domik/pdf": "workspace:^",
+    "@domik/shared": "workspace:*",
+    "@domik/storage": "workspace:^",
+    "nodemailer": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2",
+    "tsup": "^8.5.0",
+    "tsx": "^4.23.15"
+  }
+}

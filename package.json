@@ -1,0 +1,42 @@
+{
+  "name": "domik",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.14.2",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @domik/db db:generate",
+    "db:migrate": "pnpm --filter @domik/db db:migrate",
+    "db:studio": "pnpm --filter @domik/db db:studio",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
+    "db:seed": "pnpm --filter @domik/db db:seed",
+    "db:reset": "pnpm --filter @domik/db db:reset",
+    "verify-auction": "pnpm --silent --filter @domik/worker verify-auction",
+    "demo-auction": "pnpm --silent --filter @domik/worker demo-auction",
+    "sign-test-pdf": "pnpm --silent --filter @domik/dss sign-test-pdf",
+    "dss:up": "docker compose --profile dss up -d --build dss"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.4.0",
+    "prettier": "^3.10.1",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "turbo": "^2.11.11",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02">
+  <BkToCstmrStmt>
+    <GrpHdr>
+      <MsgId>STMT-2026-11-27-001</MsgId>
+      <CreDtTm>2026-11-27T18:00:00</CreDtTm>
+    </GrpHdr>
+    <Stmt>
+      <Id>2026-231</Id>
+      <CreDtTm>2026-11-27T18:00:00</CreDtTm>
+      <Acct>
+        <Id><IBAN>SI56051008012340041</IBAN></Id>
+        <Ccy>EUR</Ccy>
+        <Ownr><Nm>Gradbeništvo Primer d.o.o. - v stečaju</Nm></Ownr>
+      </Acct>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="EUR">61350.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><Dt>2026-11-27</Dt></Dt>
+      </Bal>
+      <!-- 1: deposit with structured reference, exact amount, matching name -->
+      <Ntry>
+        <Amt Ccy="EUR">24000.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-11-25</Dt></BookgDt>
+        <ValDt><Dt>2026-11-25</Dt></ValDt>
+        <AcctSvcrRef>TRX-0001</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><EndToEndId>SI001001-1</EndToEndId></Refs>
+            <RltdPties>
+              <Dbtr><Nm>JANEZ NOVAK</Nm></Dbtr>
+              <DbtrAcct><Id><IBAN>SI56191000000123438</IBAN></Id></DbtrAcct>
+            </RltdPties>
+            <RmtInf>
+              <Strd>
+                <CdtrRefInf>
+                  <Tp><CdOrPrtry><Cd>SCOR</Cd></CdOrPrtry></Tp>
+                  <Ref>SI001001-1</Ref>
+                </CdtrRefInf>
+                <AddtlRmtInf>Varščina za dražbo št. 1001</AddtlRmtInf>
+              </Strd>
+            </RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <!-- 2: reference only in the unstructured text, paid by a company -->
+      <Ntry>
+        <Amt Ccy="EUR">24000.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-11-26</Dt></BookgDt>
+        <AcctSvcrRef>TRX-0002</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <RltdPties><Dbtr><Nm>Nepremičnine Kovač d.o.o.</Nm></Dbtr></RltdPties>
+            <RmtInf><Ustrd>Varscina SI00 1001-2 drazba poslovni prostor</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <!-- 3: right reference, wrong amount -->
+      <Ntry>
+        <Amt Ccy="EUR">13000.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-11-26</Dt></BookgDt>
+        <AcctSvcrRef>TRX-0003</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <RltdPties><Dbtr><Nm>Peter Kralj</Nm></Dbtr></RltdPties>
+            <RmtInf><Strd><CdtrRefInf><Ref>SI00 1001-3</Ref></CdtrRefInf></Strd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <!-- 4: unrelated incoming payment -->
+      <Ntry>
+        <Amt Ccy="EUR">350.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-11-27</Dt></BookgDt>
+        <AcctSvcrRef>TRX-0004</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <RltdPties><Dbtr><Nm>Najemnik d.o.o.</Nm></Dbtr></RltdPties>
+            <RmtInf><Ustrd>Najemnina november</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <!-- 5: outgoing payment (must be ignored) -->
+      <Ntry>
+        <Amt Ccy="EUR">120.50</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-11-27</Dt></BookgDt>
+        <AcctSvcrRef>TRX-0005</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <RltdPties><Cdtr><Nm>Elektro d.d.</Nm></Cdtr></RltdPties>
+            <RmtInf><Ustrd>Racun 2026-1182</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

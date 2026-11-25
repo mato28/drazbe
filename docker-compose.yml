@@ -1,0 +1,87 @@
+# Local development services. Run apps on the host with `pnpm dev`.
+name: domik
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: domik
+      POSTGRES_PASSWORD: domik
+      POSTGRES_DB: domik
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U domik -d domik']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible object storage (dev stand-in for Hetzner Object Storage).
+  rustfs:
+    image: rustfs/rustfs:1.0.6
+    environment:
+      RUSTFS_ACCESS_KEY: domik
+      RUSTFS_SECRET_KEY: domik-s3-secret
+      RUSTFS_CONSOLE_ENABLE: 'true'
+    ports:
+      - '9000:9000' # S3 API
+      - '9001:9001' # web console
+    volumes:
+      - rustfs-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z 127.0.0.1 9000']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: creates the dev bucket and allows browser uploads from the web app (CORS).
+  s3-init:
+    image: amazon/aws-cli:2.40.3
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: domik
+      AWS_SECRET_ACCESS_KEY: domik-s3-secret
+      AWS_DEFAULT_REGION: eu-central
+    volumes:
+      - ./infra/s3:/s3:ro
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - >
+        aws --endpoint-url http://rustfs:9000 s3api head-bucket --bucket domik 2>/dev/null ||
+        aws --endpoint-url http://rustfs:9000 s3api create-bucket --bucket domik;
+        aws --endpoint-url http://rustfs:9000 s3api put-bucket-cors --bucket domik
+        --cors-configuration file:///s3/cors.json
+    restart: 'no'
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # web UI
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # EU DSS (Digital Signature Service) — validates signed sale contracts (PAdES / QES).
+  # No official image exists: built from the official esig/dss-demonstrations Dockerfile at a
+  # pinned tag. The first build downloads Maven dependencies and takes several minutes:
+  #   pnpm dss:up
+  dss:
+    profiles: ['dss']
+    build:
+      context: https://github.com/esig/dss-demonstrations.git#6.5.1
+    image: domik/dss-demo-webapp:6.5.1
+    ports:
+      - '8089:8080' # REST: http://localhost:8089/services/rest/validation/validateSignature
+    environment:
+      JAVA_OPTS: -Xmx1g
+
+volumes:
+  postgres-data:
+  rustfs-data:
