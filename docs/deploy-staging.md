@@ -15,11 +15,21 @@ change `APP_HOST` / `S3_HOST` / `MAIL_HOST` in `.env.staging`.
 Stack (`docker-compose.staging.yml`): `migrate` (one-shot) → `web` + `worker`, `rustfs` + `s3-init`
 (S3), `mailpit` (catches all mail; nothing is sent to real addresses), optional `dss`.
 
+Images are built by GitHub Actions (`.github/workflows/docker.yml`) on every push to `main` and
+pushed to the private registry `ghcr.io/mato28/drazbe-web` / `drazbe-worker`. The VPS needs no
+source code, only two files: `docker-compose.staging.yml` and `.env.staging`.
+
 ## 1. One-time setup
+
+Create a GitHub token for pulling: GitHub → Settings → Developer settings → Personal access
+tokens → **Tokens (classic)** → scope `read:packages` only.
 
 ```sh
 # On the VPS
-git clone git@github.com:mato28/drazbe.git ~/drazbe && cd ~/drazbe
+mkdir -p ~/drazbe && cd ~/drazbe
+echo '<token>' | docker login ghcr.io -u mato28 --password-stdin
+# Copy the two files from the repo (scp from your laptop, or paste them):
+#   scp docker-compose.staging.yml .env.staging.example root@49.12.206.130:~/drazbe/
 cp .env.staging.example .env.staging
 ```
 
@@ -47,14 +57,19 @@ Postgres must use UTC; the app always writes `timestamptz`, so the server settin
 
 ## 2. Deploy / update
 
+Push to `main` → wait for the **docker** workflow (GitHub → Actions) to go green, then:
+
 ```sh
-cd ~/drazbe && git pull
-docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build
+cd ~/drazbe
+docker compose --env-file .env.staging -f docker-compose.staging.yml pull
+docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
 docker compose --env-file .env.staging -f docker-compose.staging.yml logs -f web worker
 ```
 
-Migrations run automatically (`migrate` service) before web and worker start. The Next.js
-build needs about 2 GB RAM. On a small VPS, add swap or build the images in CI later.
+Migrations run automatically (`migrate` service) before web and worker start.
+
+Roll back / pin a version: set `IMAGE_TAG=sha-<short commit>` in `.env.staging`, then `pull` +
+`up -d`. Images are `linux/amd64`. On an ARM (CAX) server, change `platforms` in the workflow.
 
 Alias it:
 

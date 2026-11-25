@@ -11,4 +11,5 @@ next-env.d.ts
 !.env.example
 !.env.staging.example
 .DS_Store
+.claude/settings.local.json
 *.log

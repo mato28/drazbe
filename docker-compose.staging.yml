@@ -1,7 +1,9 @@
 # Staging / client test environment on the VPS, behind an existing Traefik.
+# Self-contained: the VPS needs only this file + .env.staging (images come from ghcr.io).
 #
-#   cp .env.staging.example .env.staging   # fill in secrets
-#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d --build
+#   docker login ghcr.io -u <github-user>          # once; token with read:packages
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml pull
+#   docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
 #
 # Postgres is NOT part of this stack: it runs in its own container on the VPS; we join its
 # Docker network. See docs/deploy-staging.md.
@@ -33,16 +35,14 @@ x-app-env: &app-env
 services:
   # One-shot: applies DB migrations; web and worker wait for it.
   migrate:
-    build: { context: ., dockerfile: apps/worker/Dockerfile }
-    image: domik-worker:staging
+    image: ghcr.io/mato28/drazbe-worker:${IMAGE_TAG:-main}
     command: ['node', 'dist/cli/migrate.js']
     environment: *app-env
     networks: [postgres]
     restart: 'no'
 
   web:
-    build: { context: ., dockerfile: apps/web/Dockerfile }
-    image: domik-web:staging
+    image: ghcr.io/mato28/drazbe-web:${IMAGE_TAG:-main}
     environment: *app-env
     depends_on:
       migrate: { condition: service_completed_successfully }
@@ -59,7 +59,7 @@ services:
       - traefik.http.services.domik-web.loadbalancer.server.port=3000
 
   worker:
-    image: domik-worker:staging
+    image: ghcr.io/mato28/drazbe-worker:${IMAGE_TAG:-main}
     environment: *app-env
     depends_on:
       migrate: { condition: service_completed_successfully }
