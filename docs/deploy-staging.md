@@ -98,6 +98,17 @@ dstg run --rm migrate node dist/cli/demo-auction.js asc 600   # or: desc | desc-
 
 Open it in two browsers (bidder 1 and bidder 2) to see live bidding.
 
+Descending demo with a scripted competitor: the bot plays Dražitelj 1 through the normal bidding
+engine and accepts as soon as price level `--step` starts (0 = starting price). If the person
+playing Dražitelj 2 accepts earlier, they win: the bot never reorders or back-dates bids.
+
+```sh
+dstg run --rm migrate node dist/cli/demo-auction.js desc            # prints the auction id
+dstg run --rm migrate node dist/cli/demo-bot.js <auctionId> --step 2
+# desc-switch: after accepting, the bot also outbids in the ascending continuation
+dstg run --rm migrate node dist/cli/demo-bot.js <auctionId> --step 1 --max 120000
+```
+
 ## 4. Reset / other
 
 ```sh

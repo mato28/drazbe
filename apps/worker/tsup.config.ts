@@ -9,6 +9,7 @@ export default defineConfig({
     'src/cli/migrate.ts',
     'src/cli/seed.ts',
     'src/cli/demo-auction.ts',
+    'src/cli/demo-bot.ts',
   ],
   format: ['esm'],
   platform: 'node',

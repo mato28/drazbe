@@ -115,6 +115,9 @@ try {
   console.log(
     `Live page: ${process.env.APP_URL ?? 'http://localhost:3000'}/drazbe/${auction.id}/v-zivo`,
   );
+  if (descending) {
+    console.log(`Competing bidder (Dražitelj 1): node dist/cli/demo-bot.js ${auction.id} --step 2`);
+  }
 } finally {
   await handle.close();
 }
