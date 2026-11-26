@@ -2,6 +2,7 @@ import { biddingService } from '@domik/core';
 import { priceCommandSchema } from '@domik/shared';
 import { BIDDER, handle, idParam, jsonBody } from '@/server/api';
 import { toBidResultDto } from '@/server/dto';
+import { enforceRateLimit } from '@/server/rate-limit';
 import { serviceContext } from '@/server/services';
 
 /** PREEMPTION: a pre-emption holder matches the highest bid. */
@@ -14,6 +15,7 @@ export function POST(
     BIDDER,
     async (actor) => {
       const id = await idParam(params, 'auctionId');
+      enforceRateLimit('bid', `user:${actor.userId}`);
       const input = await jsonBody(request, priceCommandSchema);
       return toBidResultDto(
         await biddingService.matchAsPreemptionHolder(serviceContext(), actor, id, input),

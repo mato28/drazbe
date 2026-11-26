@@ -17,9 +17,10 @@ function errorJson(
   code: ApiError['error']['code'],
   message: string,
   fields?: Record<string, string>,
+  headers?: HeadersInit,
 ): Response {
   const body: ApiError = { error: { code, message, ...(fields ? { fields } : {}) } };
-  return Response.json(body, { status });
+  return Response.json(body, { status, ...(headers ? { headers } : {}) });
 }
 
 /** Thrown by the helpers below; turned into a response by `handle`. */
@@ -75,8 +76,9 @@ export function apiFailure(
   code: ApiError['error']['code'],
   message: string,
   fields?: Record<string, string>,
+  headers?: HeadersInit,
 ): ApiFailure {
-  return new ApiFailure(errorJson(status, code, message, fields));
+  return new ApiFailure(errorJson(status, code, message, fields, headers));
 }
 
 /** State-changing requests must come from our own origin (defence in depth next to SameSite). */

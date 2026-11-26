@@ -50,6 +50,7 @@ export const API_ERROR_CODES = [
   'FORBIDDEN',
   'NOT_FOUND',
   'CONFLICT',
+  'RATE_LIMITED',
   'INTERNAL',
 ] as const;
 
