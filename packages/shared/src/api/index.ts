@@ -10,3 +10,4 @@ export * from './me';
 export * from './public';
 export * from './registrations';
 export * from './post-auction';
+export * from './vat';

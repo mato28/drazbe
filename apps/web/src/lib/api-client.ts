@@ -47,3 +47,12 @@ export async function apiUpload<T>(url: string, form: FormData): Promise<ApiResu
     return { ok: false, message: 'Povezava s strežnikom ni uspela.', fields: {} };
   }
 }
+
+/** GET one of our REST endpoints. Never throws. */
+export async function apiGet<T>(url: string): Promise<ApiResult<T>> {
+  try {
+    return await toResult<T>(await fetch(url, { headers: { Accept: 'application/json' } }));
+  } catch {
+    return { ok: false, message: 'Povezava s strežnikom ni uspela.', fields: {} };
+  }
+}

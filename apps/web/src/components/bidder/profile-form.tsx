@@ -7,13 +7,14 @@ import {
   type BidderType,
 } from '@domik/shared';
 import { useRouter } from 'next/navigation';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useRef, useState } from 'react';
 import { Field, invalidProps } from '@/components/form/field';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiJson } from '@/lib/api-client';
 import { textField } from '@/lib/form';
+import { useVatAutofill } from '@/lib/use-vat-autofill';
 import { cn } from '@/lib/utils';
 
 export function ProfileForm({
@@ -35,6 +36,8 @@ export function ProfileForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const vat = useVatAutofill(formRef, { companyName: 'name', address: 'address' });
 
   async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -68,14 +71,20 @@ export function ProfileForm({
     name: string,
     label: string,
     value: string,
-    extra: { placeholder?: string; hint?: string; type?: string; className?: string } = {},
+    extra: {
+      placeholder?: string;
+      hint?: string | null;
+      type?: string;
+      className?: string;
+      onBlur?: (e: { currentTarget: HTMLInputElement }) => void;
+    } = {},
   ) => (
     <Field
       id={name}
       label={label}
       required
       error={errors[name]}
-      hint={extra.hint}
+      hint={extra.hint ?? undefined}
       className={extra.className}
     >
       <Input
@@ -85,13 +94,19 @@ export function ProfileForm({
         defaultValue={value}
         placeholder={extra.placeholder}
         disabled={locked}
+        onBlur={extra.onBlur}
         {...invalidProps(name, errors[name])}
       />
     </Field>
   );
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form
+      ref={formRef}
+      onSubmit={(e) => void onSubmit(e)}
+      className="grid gap-4 sm:grid-cols-2"
+      noValidate
+    >
       <fieldset className="grid gap-3 sm:col-span-2 sm:grid-cols-2" disabled={locked}>
         <legend className="sr-only">Vrsta dražitelja</legend>
         {BIDDER_TYPES.map((t) => (
@@ -139,9 +154,13 @@ export function ProfileForm({
         'taxId',
         type === 'COMPANY' ? 'Davčna številka pravne osebe' : 'Davčna številka',
         initial?.taxId ?? '',
-        {
-          placeholder: '12345679',
-        },
+        type === 'COMPANY'
+          ? {
+              placeholder: '12345679',
+              hint: vat.hint ?? 'Naziv in sedež izpolnimo samodejno iz registra VIES.',
+              onBlur: vat.onBlur,
+            }
+          : { placeholder: '12345679' },
       )}
       {input(
         'address',

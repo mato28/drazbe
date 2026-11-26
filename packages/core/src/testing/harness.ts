@@ -73,6 +73,7 @@ export function createHarness(databaseUrl: string): Harness {
     pdf,
     signatures,
     signaturePolicy: { requireQualified: true },
+    vat: { lookup: () => Promise.resolve({ status: 'NOT_FOUND' }) },
   };
 
   const user = async (role: 'TRUSTEE' | 'BIDDER') => {

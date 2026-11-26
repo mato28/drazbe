@@ -2,13 +2,14 @@
 
 import { type CaseDto } from '@domik/shared';
 import { useRouter } from 'next/navigation';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useRef, useState } from 'react';
 import { Field, invalidProps } from '@/components/form/field';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiJson } from '@/lib/api-client';
 import { textField } from '@/lib/form';
+import { useVatAutofill } from '@/lib/use-vat-autofill';
 
 const FIELDS = [
   { name: 'court', label: 'Sodišče', placeholder: 'Okrožno sodišče v Ljubljani' },
@@ -36,6 +37,12 @@ export function CaseForm({ initial, disabled }: { initial?: CaseDto; disabled?: 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const vat = useVatAutofill(formRef, {
+    debtorName: 'name',
+    debtorAddress: 'street',
+    debtorCity: 'postalCity',
+  });
 
   async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,7 +70,12 @@ export function CaseForm({ initial, disabled }: { initial?: CaseDto; disabled?: 
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form
+      ref={formRef}
+      onSubmit={(e) => void onSubmit(e)}
+      className="grid gap-4 sm:grid-cols-2"
+      noValidate
+    >
       {FIELDS.map((f) => (
         <Field
           key={f.name}
@@ -71,7 +83,13 @@ export function CaseForm({ initial, disabled }: { initial?: CaseDto; disabled?: 
           label={f.label}
           required
           error={errors[f.name]}
-          hint={'hint' in f ? f.hint : undefined}
+          hint={
+            f.name === 'debtorTaxId'
+              ? (vat.hint ?? 'Naziv in naslov dolžnika izpolnimo samodejno iz registra VIES.')
+              : 'hint' in f
+                ? f.hint
+                : undefined
+          }
         >
           <Input
             id={f.name}
@@ -79,6 +97,7 @@ export function CaseForm({ initial, disabled }: { initial?: CaseDto; disabled?: 
             defaultValue={initial?.[f.name] ?? ''}
             placeholder={f.placeholder}
             disabled={disabled}
+            onBlur={f.name === 'debtorTaxId' ? vat.onBlur : undefined}
             {...invalidProps(f.name, errors[f.name])}
           />
         </Field>

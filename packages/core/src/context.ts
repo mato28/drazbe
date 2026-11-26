@@ -5,6 +5,7 @@ import { type IdentityProvider } from './identity/provider';
 import { type DocumentContent } from './registrations/statement';
 import { type SignaturePolicy } from './signatures/policy';
 import { type SignatureValidator } from './signatures/validator';
+import { type VatRegistry } from './vat/registry';
 
 /** Who is performing an operation. */
 export interface Actor {
@@ -39,4 +40,6 @@ export interface ServiceContext {
   pdf: PdfRenderer;
   signatures: SignatureValidator;
   signaturePolicy: SignaturePolicy;
+  /** VAT register for pre-filling company name/address from a tax number. */
+  vat: VatRegistry;
 }

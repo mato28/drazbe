@@ -4,6 +4,8 @@ import {
   type ObjectStorage,
   type ServiceContext,
   systemClock,
+  type VatRegistry,
+  ViesVatRegistry,
 } from '@domik/core';
 import { createUnitOfWork } from '@domik/db';
 import { DssSignatureValidator } from '@domik/dss';
@@ -29,6 +31,8 @@ function storage(): ObjectStorage {
   return globalForStorage.__domikStorage;
 }
 
+const vatRegistry: VatRegistry = new ViesVatRegistry();
+
 /** Dependencies handed to every core service call. */
 export function serviceContext(): ServiceContext {
   return {
@@ -41,5 +45,6 @@ export function serviceContext(): ServiceContext {
     pdf: { render: renderDocumentPdf },
     signatures: new DssSignatureValidator(serverConfig().DSS_URL),
     signaturePolicy: { requireQualified: serverConfig().SIGNATURE_REQUIRE_QUALIFIED },
+    vat: vatRegistry,
   };
 }

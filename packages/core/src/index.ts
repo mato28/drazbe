@@ -51,6 +51,8 @@ export {
 
 export * from './signatures/validator';
 export * from './signatures/policy';
+export * from './vat/registry';
+export * as vatService from './vat/service';
 export * from './post-auction/terms';
 export { buildPain001, sepaText, type Pain001Input, type Pain001Payment } from './payments/pain001';
 export {

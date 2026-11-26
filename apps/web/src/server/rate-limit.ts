@@ -3,7 +3,7 @@ import { apiFailure } from './api';
 import { TokenBucketLimiter } from './token-bucket';
 
 /**
- * Per-client request limits for the live-auction endpoints. A person clicking never reaches them;
+ * Per-client request limits for the live-auction and lookup endpoints. A person clicking never reaches them;
  * a script polling or firing requests in a loop does. They do not decide who wins (the engine
  * does), they cap how hard one client can hit the server.
  */
@@ -12,6 +12,8 @@ const LIMITERS = {
   bid: new TokenBucketLimiter({ capacity: 5, refillPerSec: 0.5 }),
   /** Live-state reads, per signed-in user or per IP. The live page itself uses the stream. */
   live: new TokenBucketLimiter({ capacity: 10, refillPerSec: 1 }),
+  /** VIES tax-number lookups, per user (VIES itself throttles busy clients). */
+  vatLookup: new TokenBucketLimiter({ capacity: 10, refillPerSec: 0.2 }),
 } as const;
 
 export type RateLimitName = keyof typeof LIMITERS;
